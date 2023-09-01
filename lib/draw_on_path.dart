@@ -90,7 +90,7 @@ extension DrawOnPath on Canvas {
       restore();
       currDist += charSize.width + letterSpacing;
 
-      if (currDist > pathMetricsList[currentMetric].length) {
+      if (currDist > pathMetricsList[currentMetric].length - startPoint) {
         currDist = 0;
         currentMetric++;
       }
@@ -98,54 +98,6 @@ extension DrawOnPath on Canvas {
       if (currentMetric == pathMetricsList.length) {
         break;
       }
-    }
-  }
-
-  /// draws pattern defined in [drawElementAt] along [path].
-  ///
-  /// [index] can be used to draw different element at different position based on some logic.
-  ///
-  /// Use [canvas] to draw anything at [position].
-  /// The next [position] is calculated based on [spacing] provided.
-
-  /// [spacing] should be greater than [0].
-  /// Ideally [spacing] [=] element width [+] spacing between two elements
-  /// (spacing between starting points of two consecutive elements)
-
-  void drawOnPath(
-    Path path,
-    void Function(int index, Canvas canvas, Offset position) drawElementAt, {
-    required double spacing,
-  }) {
-    assert(spacing > 0);
-
-    if (spacing <= 0) {
-      return;
-    }
-
-    final pathMetrics = path.computeMetrics();
-    final pathMetricsList = pathMetrics.toList();
-
-    int currentMetric = 0;
-    int index = 0;
-
-    while (currentMetric < pathMetricsList.length) {
-      final currMetricLength = pathMetricsList[currentMetric].length;
-      for (double d = 0.0; d < currMetricLength; d += spacing) {
-        final tangent = pathMetricsList[currentMetric].getTangentForOffset(d)!;
-        final currPos = tangent.position;
-        final currAngle = tangent.angle;
-
-        save();
-        translate(currPos.dx, currPos.dy);
-        rotate(-currAngle);
-
-        drawElementAt(index, this, currPos.translate(-currPos.dx, -currPos.dy));
-        index++;
-
-        restore();
-      }
-      currentMetric++;
     }
   }
 }
