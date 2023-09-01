@@ -28,6 +28,7 @@ extension DrawOnPath on Canvas {
     bool isClosed = false,
     TextDirection textDirection = TextDirection.ltr,
     TextAlignment textAlignment = TextAlignment.mid,
+    double startPoint = 0.0
   }) {
     if (text.isEmpty) {
       return;
@@ -66,7 +67,7 @@ extension DrawOnPath on Canvas {
       final charSize = textPainter.size;
 
       final tangent = pathMetricsList[currentMetric]
-          .getTangentForOffset(currDist + charSize.width / 2)!;
+          .getTangentForOffset(currDist + startPoint + charSize.width / 2)!;
       final currLetterPos = tangent.position;
       final currLetterAngle = tangent.angle;
 
