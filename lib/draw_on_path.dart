@@ -22,13 +22,11 @@ extension DrawOnPath on Canvas {
   void drawTextOnPath(
     String text,
     Path path, {
+    double startPoint = 0.0,
     TextStyle textStyle = const TextStyle(),
     double letterSpacing = 0.0,
-    bool autoSpacing = false,
-    bool isClosed = false,
     TextDirection textDirection = TextDirection.ltr,
     TextAlignment textAlignment = TextAlignment.mid,
-    double startPoint = 0.0
   }) {
     if (text.isEmpty) {
       return;
@@ -37,26 +35,8 @@ extension DrawOnPath on Canvas {
     final pathMetrics = path.computeMetrics();
     final pathMetricsList = pathMetrics.toList();
 
-    if (autoSpacing && text.length > 1) {
-      var totalLength = 0.0;
-
-      for (var metric in path.computeMetrics()) {
-        totalLength += metric.length;
-      }
-
-      final textSize = getTextPainterFor(
-        text,
-        textStyle,
-        textDirection: textDirection,
-      ).size;
-
-      final chars = isClosed ? (text.length) : (text.length - 1);
-
-      letterSpacing = (totalLength - textSize.width) / chars;
-    }
-
     int currentMetric = 0;
-    double currDist = 0;
+    double currDist = startPoint;
 
     for (int i = 0; i < text.length; i++) {
       final textPainter = getTextPainterFor(
@@ -66,37 +46,43 @@ extension DrawOnPath on Canvas {
       );
       final charSize = textPainter.size;
 
-      final tangent = pathMetricsList[currentMetric]
-          .getTangentForOffset(currDist + startPoint + charSize.width / 2)!;
-      final currLetterPos = tangent.position;
-      final currLetterAngle = tangent.angle;
+      //startPoint<0일시(text가 path의 앞부분을 넘어갈시) text를 그리지 않음 
+      if (currDist < 0) {
+        currDist += charSize.width + letterSpacing;
+      } else {
+        final tangent = pathMetricsList[currentMetric]
+            .getTangentForOffset(currDist + charSize.width / 2)!;
 
-      save();
-      translate(currLetterPos.dx, currLetterPos.dy);
-      rotate(-currLetterAngle);
-      textPainter.paint(
-        this,
-        currLetterPos
-            .translate(
-              -currLetterPos.dx,
-              -currLetterPos.dy,
-            )
-            .translate(
-              -charSize.width * 0.5,
-              -charSize.height *
-                  getTranslateYFactorForTextAlignment(textAlignment),
-            ),
-      );
-      restore();
-      currDist += charSize.width + letterSpacing;
+        final currLetterPos = tangent.position;
+        final currLetterAngle = tangent.angle;
 
-      if (currDist > pathMetricsList[currentMetric].length - startPoint) {
-        currDist = 0;
-        currentMetric++;
-      }
+        save();
+        translate(currLetterPos.dx, currLetterPos.dy);
+        rotate(-currLetterAngle);
+        textPainter.paint(
+          this,
+          currLetterPos
+              .translate(
+                -currLetterPos.dx,
+                -currLetterPos.dy,
+              )
+              .translate(
+                -charSize.width * 0.5,
+                -charSize.height *
+                    getTranslateYFactorForTextAlignment(textAlignment),
+              ),
+        );
+        restore();
+        currDist += charSize.width + letterSpacing; 
 
-      if (currentMetric == pathMetricsList.length) {
-        break;
+        if (currDist > pathMetricsList[currentMetric].length) {
+          currDist = 0;
+          currentMetric++;
+        }
+
+        if (currentMetric == pathMetricsList.length) {
+          break;
+        }
       }
     }
   }
